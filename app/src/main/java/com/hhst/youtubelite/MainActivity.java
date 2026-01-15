@@ -24,8 +24,9 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-
 import com.hhst.youtubelite.Downloader.DownloadService;
+import com.startapp.sdk.ads.banner.Banner;
+import com.startapp.sdk.adsbase.StartAppAd;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,11 +44,18 @@ public class MainActivity extends AppCompatActivity {
     public SwipeRefreshLayout swipeRefreshLayout;
     public ProgressBar progressBar;
 
+    private Banner startAppBanner; // Start.io Banner
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
+        // START.IO BANNER INIT
+        startAppBanner = findViewById(R.id.startAppBanner);
+        startAppBanner.loadAd();
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -65,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
                         value -> {}
                 )
         );
-        swipeRefreshLayout.setProgressViewOffset(true, 80,180);
+        swipeRefreshLayout.setProgressViewOffset(true, 80, 180);
 
         loadScript();
         webview.build();
@@ -113,18 +121,18 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void loadScript(){
+    public void loadScript() {
         AssetManager assetManager = getAssets();
 
         List<String> res_pths = Arrays.asList("css", "js");
-        try{
+        try {
             for (String dir_path : res_pths) {
                 ArrayList<String> resources = new ArrayList<>(
                         Arrays.asList(Objects.requireNonNull(assetManager.list(dir_path)))
                 );
                 String init_res = resources.contains("init.js") ? "init.js" :
                         resources.contains("init.min.js") ? "init.min.js" : null;
-                if (init_res != null){
+                if (init_res != null) {
                     webview.injectJavaScript(
                             assetManager.open(dir_path + File.separator + init_res));
                     resources.remove(init_res);
@@ -139,10 +147,9 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
-        }catch (IOException e){
+        } catch (IOException e) {
             Log.e("IOException", e.toString());
         }
-
     }
 
     @Override
@@ -152,14 +159,14 @@ public class MainActivity extends AppCompatActivity {
                     "window.dispatchEvent(new Event('onGoBack'));",
                     value -> {}
             );
-            if (webview.fullscreen != null && webview.fullscreen.getVisibility() == View.VISIBLE){
+            if (webview.fullscreen != null && webview.fullscreen.getVisibility() == View.VISIBLE) {
                 webview.evaluateJavascript(
                         "document.exitFullscreen()",
                         value -> {}
                 );
                 return true;
             }
-            if (webview.canGoBack()){
+            if (webview.canGoBack()) {
                 webview.goBack();
             } else {
                 finish();
@@ -192,7 +199,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-
     public DownloadService downloadService;
 
     public void startDownloadService() {
@@ -214,5 +220,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // DESTROY START.IO BANNER
+        if (startAppBanner != null) startAppBanner.destroy();
     }
 }
